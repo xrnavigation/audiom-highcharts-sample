@@ -1,8 +1,13 @@
 import Highcharts from 'highcharts/highmaps';
+import AccessibilityModule from 'highcharts/modules/accessibility';
 import AudiomPlugin, { AudiomDisplayMode, SourceBackend } from '@xrnavigation/audiom-highcharts';
 import { StepSize } from '@xrnavigation/audiom-embedder';
 import { AFRICA_GDP_FALLBACK, AFRICA_HC_KEYS } from './africa-gdp-fallback';
 import { fetchWorldBankIndicator } from './world-bank-client';
+
+// Register the Highcharts accessibility module so the chart SVG gets proper
+// ARIA roles, keyboard navigation, and a screen-reader data table.
+AccessibilityModule(Highcharts);
 
 // One-time plugin bootstrap. `devServer()` pairs with `audiomHighchartsDev()`
 // in vite.config.ts so the Audiom iframe can fetch our GeoJSON cross-origin.
@@ -17,7 +22,11 @@ AudiomPlugin.init(Highcharts, {
 // Falls back to the static snapshot in africa-gdp-fallback.ts if the fetch
 // fails or returns no usable records.
 // ---------------------------------------------------------------------------
+const statusEl = document.getElementById('chart-status');
+const setStatus = (msg: string) => { if (statusEl) statusEl.textContent = msg; };
+
 let africaGdpData: Array<[string, number]>;
+let usingFallback = false;
 try {
   africaGdpData = await fetchWorldBankIndicator({
     indicator: 'NY.GDP.PCAP.CD',
@@ -26,6 +35,7 @@ try {
 } catch (err) {
   console.warn('[africa-gdp] Live fetch failed, using fallback data:', err);
   africaGdpData = AFRICA_GDP_FALLBACK;
+  usingFallback = true;
 }
 
 const topology = await fetch(
@@ -39,6 +49,17 @@ Highcharts.mapChart('chart', {
   mapNavigation: {
     enabled: true,
     buttonOptions: { verticalAlign: 'bottom' }
+  },
+  accessibility: {
+    enabled: true,
+    description:
+      'Choropleth map of Africa showing GDP per capita in US dollars ' +
+      'for the most recent available year. Darker blue indicates higher GDP per capita. ' +
+      'Countries with no data are shown in grey.',
+    keyboardNavigation: { enabled: true },
+    point: {
+      valueDescriptionFormat: '{point.name}: ${point.value:,.0f} GDP per capita'
+    }
   },
   colorAxis: {
     min: 200,
@@ -72,3 +93,12 @@ Highcharts.mapChart('chart', {
     stepSize: StepSize.kilometers(400)
   }
 });
+
+// Update the live region once the chart has rendered so screen readers
+// announce the loaded state (and note if offline data was used).
+const countryCount = africaGdpData.length;
+setStatus(
+  usingFallback
+    ? `Chart loaded using offline data. Showing ${countryCount} African countries.`
+    : `Chart loaded. Showing live GDP per capita data for ${countryCount} African countries.`
+);
