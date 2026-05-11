@@ -1,5 +1,6 @@
 import Highcharts from 'highcharts/highmaps';
 import AudiomPlugin, { AudiomDisplayMode, SourceBackend } from '@xrnavigation/audiom-highcharts';
+import { StepSize } from '@xrnavigation/audiom-embedder';
 
 // One-time plugin bootstrap. `devServer()` pairs with `audiomHighchartsDev()`
 // in vite.config.ts so the Audiom iframe can fetch our GeoJSON cross-origin.
@@ -67,5 +68,16 @@ Highcharts.mapChart('chart', {
       states: { hover: { color: '#a4edba' } },
       tooltip: { pointFormat: '{point.name}: <b>${point.value:,.0f}</b>' }
     }
-  ]
+  ],
+  audiom: {
+    // Render the visual heatmap on the Audiom side so the colors assigned
+    // by the rules' `fill` expressions are visible in the iframe.
+    showVisualMap: true,
+    // Absolute URL so the cross-origin Audiom iframe can fetch it.
+    rules: new URL('audiom-data/africa-gdp.rules.json', window.location.href).toString(),
+    // Center on Botswana [lon, lat] with a tighter zoom.
+    center: [24, -22],
+    zoom: 2.5,
+    stepSize: StepSize.kilometers(400)
+  }
 });

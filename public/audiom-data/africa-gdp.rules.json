@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "rules": [
+    {
+      "id": "choropleth-africa-gdp-with-value",
+      "filter": [
+        "all",
+        ["==", ["get", "ruleType"], "choropleth_region"],
+        ["has", "value"]
+      ],
+      "output": {
+        "ruleType": "choropleth_region",
+        "name": [
+          "concat",
+          ["coalesce", ["get", "name"], "Unknown country"],
+          ", $",
+          ["to-string", ["get", "value"]],
+          " GDP per capita"
+        ],
+        "ruleName": "",
+        "passable": true,
+        "fill": [
+          "step",
+          ["to-number", ["get", "value"]],
+          "#EFEFFF",
+          1500, "#9999FF",
+          3000, "#4444FF",
+          6000, "#222288",
+          12000, "#000033"
+        ],
+        "fill-opacity": 0.85
+      }
+    },
+    {
+      "id": "choropleth-africa-gdp-no-value",
+      "filter": ["==", ["get", "ruleType"], "choropleth_region"],
+      "output": {
+        "ruleType": "choropleth_region",
+        "name": [
+          "concat",
+          ["coalesce", ["get", "name"], "Unknown country"],
+          " (no GDP data)"
+        ],
+        "ruleName": "",
+        "passable": true,
+        "fill": "#DDDDDD",
+        "fill-opacity": 0.85
+      }
+    }
+  ],
+  "augmenters": []
+}
